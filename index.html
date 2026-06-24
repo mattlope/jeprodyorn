@@ -2,8 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>YouTube Jeopardy! Board</title>
+<meta name="description" content="A Jeopardy board where every square plays a famous YouTube video.">
+<meta name="theme-color" content="#0a0826">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jeopardy!">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
@@ -67,6 +76,8 @@
     box-shadow: 0 0 30px rgba(40,80,220,0.4), inset 0 -6px 14px rgba(40,90,230,0.5);
     border-top: 2px solid #2a4ad0;
   }
+
+  .wordmark { display: none; }  /* shown only on phones, replacing the truss */
 
   .stage-row {
     display: flex;
@@ -313,40 +324,124 @@
   }
   .overlay .close:hover { background: #f0bd4d; }
 
-  /* ---------- Phones / narrow screens ---------- */
-  @media (max-width: 680px) {
-    body { justify-content: flex-start; }
-    body::after { display: none; }          /* drop the perspective floor; it just wastes height */
-    .stage { padding: 10px 5px 18px; }
-    .truss { width: 62%; height: 12px; margin-bottom: 8px; }
-    .stage-row { gap: 5px; }
-    .side { width: 13px; padding: 8px 0; border-radius: 4px; }
-    .side .led { width: 7px; }
-    .board-frame { padding: 5px; border-radius: 5px; }
-    .board { gap: 4px; aspect-ratio: 6 / 6.4; }
+  /* ============ MOBILE: fit-to-screen, app-like ============ */
+  @media (max-width: 680px), (orientation: landscape) and (max-height: 520px) {
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      justify-content: flex-start;
+      padding: 0;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    body::after { display: none; }            /* drop the perspective floor */
+
+    /* The stage becomes the whole screen and lays out top-to-bottom */
+    .stage {
+      height: 100vh;
+      height: 100dvh;
+      max-width: none;
+      display: flex;
+      flex-direction: column;
+      padding:
+        calc(env(safe-area-inset-top) + 6px)
+        calc(env(safe-area-inset-right) + 6px)
+        calc(env(safe-area-inset-bottom) + 6px)
+        calc(env(safe-area-inset-left) + 6px);
+    }
+
+    /* Compact gold wordmark instead of the lighting truss */
+    .truss { display: none; }
+    .wordmark {
+      display: block;
+      flex: 0 0 auto;
+      text-align: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 800;
+      font-style: italic;
+      color: var(--gold);
+      text-shadow: 2px 2px 0 #000;
+      font-size: clamp(20px, 7vw, 34px);
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    /* Board fills all remaining height: the whole grid is visible, no scrolling */
+    .stage-row { flex: 1 1 auto; gap: 5px; min-height: 0; }
+    .side { width: 11px; padding: 6px 0; border-radius: 4px; }
+    .side .led { width: 6px; }
+    .board-frame { flex: 1 1 auto; min-width: 0; padding: 4px; border-radius: 5px; display: flex; }
+    .board {
+      flex: 1 1 auto;
+      width: 100%;
+      height: 100%;
+      aspect-ratio: auto;          /* let the rows share the available height */
+      gap: 4px;
+    }
     .category {
-      font-size: 2.05vw;
+      font-size: clamp(7px, 2.4vmin, 15px);
       padding: 4px 2px;
       letter-spacing: 0;
       text-shadow: 1px 1px 1px rgba(0,0,0,0.7);
     }
     .cell .value {
-      font-size: 4.7vw;
+      font-size: clamp(15px, 5.4vmin, 38px);
       letter-spacing: 0;
       text-shadow: 2px 2px 0 #2a1a00;
     }
-    .cell.played::after { font-size: 3.4vw; }
-    .controls { margin-top: 14px; margin-bottom: 8px; }
-    button { padding: 7px 14px; font-size: 11px; }
-    .overlay { padding: 10px; }
-    .overlay .meta { margin-bottom: 8px; }
+    .cell:hover { filter: none; }            /* no hover state on touch */
+    .cell:active { filter: brightness(1.3); } /* press feedback */
+    .cell.played::after { font-size: clamp(11px, 3.4vmin, 20px); }
+
+    /* Reset becomes a floating, thumb-reachable button */
+    .controls {
+      position: fixed;
+      margin: 0;
+      right: calc(env(safe-area-inset-right) + 10px);
+      bottom: calc(env(safe-area-inset-bottom) + 10px);
+      z-index: 5;
+    }
+    .controls button {
+      width: 46px; height: 46px;
+      padding: 0;
+      font-size: 0;
+      border-radius: 50%;
+      background: rgba(10,8,38,0.78);
+      border: 1px solid rgba(255,255,255,0.3);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+    }
+    .controls button::before { content: "\21BB"; font-size: 22px; line-height: 1; color: #cfd3ff; }
+
+    /* Immersive, edge-to-edge video sheet */
+    .overlay {
+      padding:
+        calc(env(safe-area-inset-top) + 8px) 0
+        calc(env(safe-area-inset-bottom) + 8px);
+    }
+    .overlay .meta { margin-bottom: 8px; padding: 0 12px; }
     .overlay .meta .dollar { font-size: 26px; }
     .overlay .meta .title { font-size: 13px; }
+    .video-wrap { width: 100vw; max-height: none; border-left: 0; border-right: 0; }
+    .overlay .yt-link { margin-top: 12px; }
+    .overlay .close { margin-top: 12px; padding: 12px 30px; font-size: 14px; }
   }
+
+  /* Subtle slide-up when the player opens */
+  @keyframes sheetUp {
+    from { transform: translateY(26px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+  }
+  .overlay.open .video-wrap { animation: sheetUp 0.28s ease-out; }
 </style>
 </head>
 <body>
   <div class="stage">
+    <h1 class="wordmark">Jeopardy!</h1>
     <div class="truss"></div>
     <div class="stage-row">
       <div class="side"><div class="led"></div></div>

@@ -1,0 +1,19 @@
+{
+  "name": "YouTube Jeopardy!",
+  "short_name": "Jeopardy!",
+  "description": "A Jeopardy board where every square plays a famous YouTube video.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#05030f",
+  "theme_color": "#0a0826",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
