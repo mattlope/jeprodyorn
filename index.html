@@ -87,13 +87,49 @@
     padding: 18px 0;
   }
   .side .led {
-    width: 20px;
+    position: relative;
+    overflow: hidden;
+    width: 22px;
     height: 100%;
     border-radius: 4px;
     background:
       repeating-linear-gradient(180deg,
         #ffb648 0 5px, #ff8a1e 5px 9px, #b34d06 9px 12px, #140a00 12px 15px);
     box-shadow: 0 0 16px rgba(255,140,30,0.8), inset 0 0 6px rgba(0,0,0,0.5);
+    animation: ledScroll 1.1s linear infinite, ledPulse 1.5s ease-in-out infinite alternate;
+  }
+  /* A bright "comet" of light that sweeps up and down the column */
+  .side .led::after {
+    content: "";
+    position: absolute;
+    left: -40%;
+    right: -40%;
+    height: 30%;
+    top: 0;
+    border-radius: 50%;
+    background: radial-gradient(50% 60% at 50% 50%,
+      rgba(255,240,200,0.98) 0%, rgba(255,170,55,0.6) 42%, rgba(255,140,30,0) 72%);
+    filter: blur(1px);
+    mix-blend-mode: screen;
+    animation: ledTravel 1.8s ease-in-out infinite alternate;
+  }
+  /* Offset the right column so the two sides shimmer out of sync */
+  .stage-row .side:last-child .led { animation-delay: -0.5s, -0.75s; }
+  .stage-row .side:last-child .led::after { animation-delay: -0.9s; }
+
+  @keyframes ledScroll {
+    from { background-position-y: 0; }
+    to   { background-position-y: 15px; }
+  }
+  @keyframes ledPulse {
+    from { filter: brightness(0.8);
+           box-shadow: 0 0 9px rgba(255,140,30,0.5), inset 0 0 6px rgba(0,0,0,0.5); }
+    to   { filter: brightness(1.4);
+           box-shadow: 0 0 28px rgba(255,185,75,1), inset 0 0 6px rgba(0,0,0,0.5); }
+  }
+  @keyframes ledTravel {
+    from { top: -30%; }
+    to   { top: 100%; }
   }
 
   .board-frame {
@@ -350,7 +386,7 @@
       clues: [
         { id: "TTisy5gmP7I", title: "The Dramatic Chipmunk" },
         { id: "OQSNhk5ICTI", title: "Yosemitebear Mountain Double Rainbow" },
-        { id: "QH2-TGUlwu4", title: "Nyan Cat (10 hours? just the original)" },
+        { id: "O4cnGdSu52s", title: "Nyan Cat - the original (2011)" },
         { id: "CsGYh8AacgY", title: "Charlie the Unicorn" },
         { id: "dQw4w9WgXcQ", title: "Rick Astley - Never Gonna Give You Up (the Rickroll)" }
       ]
