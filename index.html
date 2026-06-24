@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube Jeopardy! Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #E0A526;
+    --cell-gap: 7px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+
+  body {
+    background: radial-gradient(120% 80% at 50% 0%, #14123a 0%, #0a0826 45%, #050416 100%);
+    font-family: "Oswald", "Arial Narrow", Arial, sans-serif;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Lit blue stage floor */
+  body::after {
+    content: "";
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 26vh;
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.35) 0 2px, transparent 2px 46px),
+      linear-gradient(180deg, #1b1f8a 0%, #2233d6 35%, #1a2bd0 70%, #0c1466 100%);
+    transform: perspective(420px) rotateX(58deg);
+    transform-origin: bottom center;
+    opacity: 0.85;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .stage {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1180px;
+    padding: 20px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .truss {
+    width: 86%;
+    height: 30px;
+    margin-bottom: 14px;
+    border-radius: 0 0 50% 50% / 0 0 100% 100%;
+    background:
+      repeating-linear-gradient(180deg, #0a1233 0 3px, #1c3aa8 3px 4px, #0a1233 4px 7px),
+      linear-gradient(180deg, #101a44 0%, #060a22 100%);
+    box-shadow: 0 0 30px rgba(40,80,220,0.4), inset 0 -6px 14px rgba(40,90,230,0.5);
+    border-top: 2px solid #2a4ad0;
+  }
+
+  .stage-row {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .side {
+    width: 56px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #1a2bb8 0%, #0d1466 50%, #1a2bb8 100%);
+    box-shadow: 0 0 26px rgba(40,80,230,0.55), inset 0 0 18px rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 18px 0;
+  }
+  .side .led {
+    width: 20px;
+    height: 100%;
+    border-radius: 4px;
+    background:
+      repeating-linear-gradient(180deg,
+        #ffb648 0 5px, #ff8a1e 5px 9px, #b34d06 9px 12px, #140a00 12px 15px);
+    box-shadow: 0 0 16px rgba(255,140,30,0.8), inset 0 0 6px rgba(0,0,0,0.5);
+  }
+
+  .board-frame {
+    flex: 1;
+    max-width: 980px;
+    padding: 9px;
+    border-radius: 6px;
+    background: linear-gradient(160deg, #4a4a4a 0%, #1e1e1e 45%, #2c2c2c 100%);
+    box-shadow: 0 0 0 4px #000, 0 18px 50px rgba(0,0,0,0.75);
+  }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: 0.82fr repeat(5, 1fr);
+    gap: var(--cell-gap);
+    background: #000;
+    aspect-ratio: 6 / 5.1;
+  }
+
+  .category {
+    background: linear-gradient(180deg, #2a2ae6 0%, #1414c4 55%, #0c0ca8 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6px 5px;
+    font-family: "Oswald", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: clamp(8px, 1.2vw, 16px);
+    line-height: 1.05;
+    letter-spacing: 0.3px;
+    color: #fff;
+    text-shadow: 2px 2px 2px rgba(0,0,0,0.7);
+  }
+
+  .cell {
+    background: linear-gradient(180deg, #2626e3 0%, #1414cc 50%, #0a0ab4 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: filter 0.12s ease;
+  }
+  .cell:hover { filter: brightness(1.18); }
+
+  .cell .value {
+    font-family: "Anton", "Arial Narrow", sans-serif;
+    color: var(--gold);
+    font-size: clamp(20px, 4vw, 50px);
+    letter-spacing: 1px;
+    text-shadow: 3px 3px 0 #2a1a00, 4px 4px 1px rgba(0,0,0,0.55);
+  }
+
+  .cell.played { filter: brightness(0.32) saturate(0.6); cursor: default; }
+  .cell.played::after {
+    content: "\25B6";
+    position: absolute;
+    font-size: clamp(12px, 1.6vw, 22px);
+    color: rgba(255,255,255,0.55);
+  }
+  .cell.played .value { opacity: 0.18; }
+
+  .controls { margin-top: 18px; z-index: 1; display: flex; gap: 10px; }
+  button {
+    background: rgba(255,255,255,0.12);
+    color: #cfd3ff;
+    border: 1px solid rgba(255,255,255,0.25);
+    padding: 8px 18px;
+    font-family: "Oswald", sans-serif;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  button:hover { background: rgba(255,255,255,0.22); }
+
+  /* Video modal / lightbox */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    z-index: 50;
+    padding: 18px;
+  }
+  .overlay.open { display: flex; }
+  .overlay .meta {
+    color: var(--gold);
+    font-family: "Oswald", sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    margin-bottom: 12px;
+    max-width: 960px;
+  }
+  .overlay .meta .dollar {
+    font-family: "Anton", sans-serif;
+    font-size: clamp(22px, 4vw, 40px);
+    display: block;
+    text-shadow: 2px 2px 0 #2a1a00;
+  }
+  .overlay .meta .title { font-size: clamp(13px, 2vw, 20px); color: #fff; }
+  .video-wrap {
+    position: relative;
+    width: min(94vw, 1120px);
+    max-height: 78vh;
+    aspect-ratio: 16 / 9;
+    background: #000;
+    border: 3px solid #222;
+    box-shadow: 0 0 40px rgba(40,80,230,0.4);
+  }
+  #player-host { position: absolute; inset: 0; }
+  .video-wrap iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+  .vid-error {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 14px;
+    padding: 24px;
+    background: rgba(8,8,20,0.95);
+    z-index: 2;
+  }
+  .vid-error.show { display: flex; }
+  .vid-error .warn { font-size: 46px; color: var(--gold); line-height: 1; }
+  .vid-error p {
+    font-family: "Oswald", sans-serif;
+    font-size: clamp(14px, 2vw, 20px);
+    color: #fff;
+    max-width: 520px;
+  }
+  .vid-error .err-btn {
+    background: var(--gold);
+    color: #000;
+    font-family: "Oswald", sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 4px;
+    font-size: 15px;
+  }
+  .vid-error .err-btn:hover { background: #f0bd4d; }
+  .overlay .yt-link {
+    margin-top: 14px;
+    color: #cfd3ff;
+    font-family: "Oswald", sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(207,211,255,0.5);
+  }
+  .overlay .yt-link:hover { color: #fff; }
+  .overlay .close {
+    margin-top: 14px;
+    background: var(--gold);
+    color: #000;
+    border: none;
+    font-weight: 700;
+  }
+  .overlay .close:hover { background: #f0bd4d; }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="truss"></div>
+    <div class="stage-row">
+      <div class="side"><div class="led"></div></div>
+      <div class="board-frame">
+        <div class="board" id="board"></div>
+      </div>
+      <div class="side"><div class="led"></div></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="resetBoard()">Reset Board</button>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="meta">
+      <span class="dollar" id="ov-dollar"></span>
+      <span class="title" id="ov-title"></span>
+    </div>
+    <div class="video-wrap">
+      <div id="player-host"></div>
+      <div class="vid-error" id="vid-error">
+        <div class="warn">&#9888;</div>
+        <p>YouTube won&#39;t let this particular clip play in an embedded player.</p>
+        <a class="err-btn" id="err-link" href="#" target="_blank" rel="noopener">Watch it on YouTube &#8599;</a>
+      </div>
+    </div>
+    <a class="yt-link" id="ov-link" href="#" target="_blank" rel="noopener">Watch on YouTube &#8599;</a>
+    <button class="close" onclick="closeVideo()">Close</button>
+  </div>
+
+<script>
+  // Each category is a slice of YouTube history. Within a column the videos climb
+  // in fame/views, so the higher the dollar value, the more iconic the clip.
+  const categories = [
+    {
+      title: "Most-Viewed of All Time",
+      clues: [
+        { id: "CevxZvSJLk8", title: "Katy Perry - Roar" },
+        { id: "OPf0YbXqDm0", title: "Mark Ronson ft. Bruno Mars - Uptown Funk" },
+        { id: "JGwWNGJdvx8", title: "Ed Sheeran - Shape of You" },
+        { id: "kJQP7kiw5Fk", title: "Luis Fonsi - Despacito ft. Daddy Yankee" },
+        { id: "XqZsoesa55w", title: "Pinkfong - Baby Shark Dance (most-viewed video ever)" }
+      ]
+    },
+    {
+      title: "Viral Dance Floor",
+      clues: [
+        { id: "jofNR_WkoCE", title: "Ylvis - The Fox (What Does the Fox Say?)" },
+        { id: "pRpeEdMmmQ0", title: "Shakira - Waka Waka (This Time for Africa)" },
+        { id: "dTAAsCNK7RA", title: "OK Go - Here It Goes Again (the treadmill video, 2006)" },
+        { id: "jUatgXGcrCM", title: "PSY - Gentleman" },
+        { id: "9bZkp7q19f0", title: "PSY - Gangnam Style (first to 1 billion views)" }
+      ]
+    },
+    {
+      title: "Early YouTube Legends",
+      clues: [
+        { id: "txqiwrbYGrs", title: "David After Dentist (2009)" },
+        { id: "EwTZ2xpQwpA", title: "Tay Zonday - Chocolate Rain" },
+        { id: "J---aiyznGQ", title: "Charlie Schmidt's Keyboard Cat" },
+        { id: "_OBlgSz8sSM", title: "Charlie Bit My Finger - Again!" },
+        { id: "jNQXAC9IVRw", title: "Me at the zoo - the very first YouTube video (2005)" }
+      ]
+    },
+    {
+      title: "Meme Hall of Fame",
+      clues: [
+        { id: "TTisy5gmP7I", title: "The Dramatic Chipmunk" },
+        { id: "OQSNhk5ICTI", title: "Yosemitebear Mountain Double Rainbow" },
+        { id: "QH2-TGUlwu4", title: "Nyan Cat (10 hours? just the original)" },
+        { id: "CsGYh8AacgY", title: "Charlie the Unicorn" },
+        { id: "dQw4w9WgXcQ", title: "Rick Astley - Never Gonna Give You Up (the Rickroll)" }
+      ]
+    },
+    {
+      title: "Kids' Megahits",
+      clues: [
+        { id: "astISOttCQ0", title: "Gummibär - The Gummy Bear Song" },
+        { id: "k85mRPqvMbE", title: "Crazy Frog - Axel F" },
+        { id: "KYniUCGPGLs", title: "Masha and the Bear - Recipe for Disaster" },
+        { id: "F4tHL8reNCs", title: "LooLoo Kids - Johny Johny Yes Papa" },
+        { id: "e_04ZrNroTo", title: "CoComelon - Wheels on the Bus" }
+      ]
+    },
+    {
+      title: "Chart-Topping Anthems",
+      clues: [
+        { id: "hT_nvWreIhg", title: "OneRepublic - Counting Stars" },
+        { id: "09R8_2nJtjg", title: "Maroon 5 - Sugar" },
+        { id: "fRh_vgS2dFE", title: "Justin Bieber - Sorry" },
+        { id: "lp-EO5I60KA", title: "Ed Sheeran - Thinking Out Loud" },
+        { id: "RgKAFK5djSk", title: "Wiz Khalifa ft. Charlie Puth - See You Again" }
+      ]
+    }
+  ];
+
+  const values = [400, 800, 1200, 1600, 2000];
+
+  function buildBoard() {
+    const board = document.getElementById("board");
+    board.innerHTML = "";
+
+    categories.forEach(cat => {
+      const header = document.createElement("div");
+      header.className = "category";
+      header.textContent = cat.title.toUpperCase();
+      board.appendChild(header);
+    });
+
+    for (let row = 0; row < values.length; row++) {
+      categories.forEach(cat => {
+        const data = cat.clues[row];
+        const cell = document.createElement("div");
+        cell.className = "cell";
+
+        const valueEl = document.createElement("div");
+        valueEl.className = "value";
+        valueEl.textContent = "$" + values[row].toLocaleString();
+        cell.appendChild(valueEl);
+
+        cell.addEventListener("click", () => {
+          if (cell.classList.contains("played")) return;
+          cell.classList.add("played");
+          openVideo(values[row], data);
+        });
+
+        board.appendChild(cell);
+      });
+    }
+  }
+
+  // A plain <iframe> embed (no "origin" parameter) is the most reliable way to
+  // play these on a local server: YouTube's player rejects localhost origins
+  // with "Error 153", so we deliberately do NOT pass one. The always-visible
+  // "Watch on YouTube" link below the player is the fallback for the rare clip
+  // whose owner blocks embedding entirely.
+  function openVideo(value, data) {
+    document.getElementById("ov-dollar").textContent = "$" + value.toLocaleString();
+    document.getElementById("ov-title").textContent = data.title;
+    const watchUrl = "https://www.youtube.com/watch?v=" + data.id;
+    document.getElementById("ov-link").href = watchUrl;
+    document.getElementById("err-link").href = watchUrl;
+    document.getElementById("player-host").innerHTML =
+      '<iframe src="https://www.youtube.com/embed/' + data.id +
+      '?autoplay=1&rel=0&playsinline=1" title="YouTube video" ' +
+      'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+      'allowfullscreen></iframe>';
+    document.getElementById("overlay").classList.add("open");
+  }
+
+  function closeVideo() {
+    document.getElementById("overlay").classList.remove("open");
+    document.getElementById("player-host").innerHTML = ""; // stops playback
+  }
+
+  function resetBoard() { buildBoard(); }
+
+  // Close on Esc or clicking the dark backdrop
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeVideo(); });
+  document.getElementById("overlay").addEventListener("click", e => {
+    if (e.target.id === "overlay") closeVideo();
+  });
+
+  buildBoard();
+</script>
+</body>
+</html>
